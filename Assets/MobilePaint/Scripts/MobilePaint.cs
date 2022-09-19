@@ -28,6 +28,7 @@ namespace unitycoder_MobilePaint
     [RequireComponent(typeof(MeshRenderer))]
     public class MobilePaint : MonoBehaviour
     {
+        #region variable
         [Header("Mouse or Touch")]
         public bool enableTouch = false;
 
@@ -70,8 +71,6 @@ namespace unitycoder_MobilePaint
         private float alphaLerpVal = 0.1f;
         private float brushAlphaLerpVal = 0.1f;
 
-        //		public bool DontPaintOverBlack = true; // so that outlines are reserved when painting
-
         [Header("Options")]
         public DrawMode drawMode = DrawMode.Default; // drawing modes: 0 = Default, 1 = custom brush, 2 = floodfill
         public bool useLockArea = false; // locking mask: only paint in area of the color that your click first
@@ -83,7 +82,6 @@ namespace unitycoder_MobilePaint
         // ERASER
         [Space(10)]
         public EraserMode eraserMode = EraserMode.BackgroundColor;
-        //private int defaultEraserSize = 32; // default fixed size for eraser
 
 
         // AREA FILL CALCULATIONS
@@ -95,14 +93,10 @@ namespace unitycoder_MobilePaint
         public event AreaWasPainted AreaPaintedEvent;
 
 
-        //private bool lockMaskCreated=false; //is lockmask already created for this click, not used yet
         private byte[] lockMaskPixels; // locking mask pixels
 
 
         public bool canDrawOnBlack = true; // to stop filling on mask black lines, FIXME: not working if its not pure black..
-
-
-        //public bool drawAfterFill = true; // TODO: return to drawing mode after first fill?
 
         public Vector2 canvasSizeAdjust = new Vector2(0, 0); // this means, "ScreenResolution.xy+screenSizeAdjust.xy" (use only minus values, to add un-drawable border on right or bottom)
         public string targetTexture = "_MainTex"; // target texture for this material shader (usually _MainTex)
@@ -122,12 +116,10 @@ namespace unitycoder_MobilePaint
         public bool useCustomBrushAlpha = true; // true = use alpha from brush, false = use alpha from current paint color
         public int selectedBrush = 0; // currently selected brush index
 
-        //private Color[] customBrushPixels;
         private byte[] customBrushBytes;
         private int customBrushWidth;
         private int customBrushHeight;
         private int customBrushWidthHalf;
-        //		private int customBrushHeightHalf;
         private int texWidthMinusCustomBrushWidth;
         private int texHeightMinusCustomBrushHeight;
 
@@ -194,9 +186,6 @@ namespace unitycoder_MobilePaint
         public bool undoEnabled = false;
         private List<byte[]> undoPixels; // undo buffer(s)
         private int maxUndoBuffers = 10; // how many undo buffers are kept in memory
-        public GameObject userInterface;
-        public bool hideUIWhilePainting = false;
-        private bool isUIVisible = true;
 
         // Debug mode, outputs debug info when used
         public bool debugMode = false;
@@ -206,6 +195,7 @@ namespace unitycoder_MobilePaint
 
         // zoom pan
         private bool isZoomingOrPanning = false;
+        #endregion
 
         void Awake()
         {
@@ -227,21 +217,10 @@ namespace unitycoder_MobilePaint
             InitializeEverything();
         }
 
-
-
         // all startup validations will be moved here
         void StartupValidation()
         {
             if (cam == null) Debug.LogError("MainCamera not founded, you must have 1 camera active & tagged as MainCamera", gameObject);
-
-            if (userInterface == null)
-            {
-                if (hideUIWhilePainting)
-                {
-                    Debug.LogWarning("UI Canvas / userInterface not assigned - disabling hideUIWhilePainting", gameObject);
-                    hideUIWhilePainting = false;
-                }
-            }
 
             // Custom brushes validation
             if (useCustomBrushes && (customBrushes == null || customBrushes.Length < 1))
@@ -478,8 +457,6 @@ namespace unitycoder_MobilePaint
 
         } // InitializeEverything
 
-
-
         // *** MAINLOOP ***
         void Update()
         {
@@ -511,8 +488,6 @@ namespace unitycoder_MobilePaint
             // catch first mousedown
             if (Input.GetMouseButtonDown(0))
             {
-                if (hideUIWhilePainting && isUIVisible) HideUI();
-
                 // when starting, grab undo buffer first
                 if (undoEnabled) GrabUndoBufferNow();
 
@@ -669,12 +644,9 @@ namespace unitycoder_MobilePaint
                     }
                     textureNeedsUpdate = true;
                 }
-
-                if (hideUIWhilePainting && !isUIVisible) ShowUI(); // show UI since we stopped drawing
             }
 
         }
-
 
         // ** Main loop for touch paint **
         int i = 0;
@@ -698,8 +670,6 @@ namespace unitycoder_MobilePaint
                 if (touch.phase == TouchPhase.Began)
                 {
                     wasTouching = true;
-
-                    if (hideUIWhilePainting && isUIVisible) HideUI();
 
                     // when starting to draw, grab undo buffer first, FIXME: do this after painting, so it wont slowdown
                     if (undoEnabled)
@@ -864,24 +834,9 @@ namespace unitycoder_MobilePaint
                     }
                     textureNeedsUpdate = true;
                 }
-
-                if (hideUIWhilePainting && !isUIVisible) ShowUI();
             }
 
         }
-
-        public virtual void HideUI()
-        {
-            isUIVisible = false;
-            userInterface.SetActive(isUIVisible);
-        }
-
-        public virtual void ShowUI()
-        {
-            isUIVisible = true;
-            userInterface.SetActive(isUIVisible);
-        }
-
 
         void UpdateTexture()
         {
@@ -889,7 +844,6 @@ namespace unitycoder_MobilePaint
             drawingTexture.LoadRawTextureData(pixels);
             drawingTexture.Apply(false);
         }
-
 
         void CreateAreaLockMask(int x, int y)
         {
@@ -1003,7 +957,6 @@ namespace unitycoder_MobilePaint
             paintColor = origColor;
         }
 
-
         public void EraseWithImage(int x, int y)
         {
             int pixel = 0;
@@ -1027,8 +980,6 @@ namespace unitycoder_MobilePaint
                 pixels[pixel + 3] = clearPixels[pixel2 + 3];
             } 
         }
-
-
 
         public void DrawPatternCircle(int x, int y)
         {
@@ -1089,8 +1040,6 @@ namespace unitycoder_MobilePaint
                 //} // if additive
             } // for area
         } // DrawPatternCircle()
-
-
 
         // actual custom brush painting function
         void DrawCustomBrush(int px, int py)
@@ -1309,7 +1258,6 @@ namespace unitycoder_MobilePaint
             }
         } // floodfill
 
-
         void CallFloodFill(int x, int y)
         {
             if (useThreshold)
@@ -1342,11 +1290,6 @@ namespace unitycoder_MobilePaint
             byte hitColorG = pixels[((texWidth * (y) + x) * 4) + 1];
             byte hitColorB = pixels[((texWidth * (y) + x) * 4) + 2];
             byte hitColorA = pixels[((texWidth * (y) + x) * 4) + 3];
-
-            //if (!canDrawOnBlack) // NOTE: currently broken
-            //{
-            //if (hitColorR==0 && hitColorG==0 && hitColorB==0 && hitColorA!=0) return;
-            //}
 
             // early exit if its same color already
             if (paintColor.r == hitColorR && paintColor.g == hitColorG && paintColor.b == hitColorB && paintColor.a == hitColorA) return;
@@ -1523,7 +1466,6 @@ namespace unitycoder_MobilePaint
             }
         } // floodfillWithTreshold
 
-
         void FloodFillWithTreshold(int x, int y)
         {
             // get canvas hit color
@@ -1623,7 +1565,6 @@ namespace unitycoder_MobilePaint
             }
         } // floodfillWithTreshold
 
-
         void LockAreaFill(int x, int y)
         {
 
@@ -1716,7 +1657,6 @@ namespace unitycoder_MobilePaint
             }
         } // LockAreaFill
 
-
         void LockAreaFillMaskOnly(int x, int y)
         {
             byte hitColorR = maskPixels[((texWidth * (y) + x) * 4) + 0];
@@ -1807,7 +1747,6 @@ namespace unitycoder_MobilePaint
                 }
             }
         } // LockAreaFillMaskOnly
-
 
         // compares if two values are below threshold
         bool CompareThreshold(byte a, byte b)
@@ -1910,7 +1849,6 @@ namespace unitycoder_MobilePaint
                 }
             }
         } // LockAreaFillWithThresholdMaskOnly
-
 
         void LockAreaFillWithThresholdMaskOnlyGetArea(int x, int y, bool getArea)
         {
@@ -2039,7 +1977,6 @@ namespace unitycoder_MobilePaint
             }
 
         } // void
-
 
         bool IsSameColor(Color32 a, byte r, byte g, byte b)
         {
@@ -2170,7 +2107,6 @@ namespace unitycoder_MobilePaint
             texHeightMinusCustomBrushHeight = texHeight - customBrushHeight;
         }
 
-
         // reads current texture pattern into pixel array, NOTE: only works with square textures
         public void ReadCurrentCustomPattern()
         {
@@ -2207,7 +2143,6 @@ namespace unitycoder_MobilePaint
             pixels[pixel + 3] = paintColor.a;
         }
 
-
         // draws single point to this pixel array index, with current paint color
         public void DrawPoint(int pixel)
         {
@@ -2216,7 +2151,6 @@ namespace unitycoder_MobilePaint
             pixels[pixel + 2] = paintColor.b;
             pixels[pixel + 3] = paintColor.a;
         }
-
 
         // draw line between 2 points (if moved too far/fast)
         // http://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm
@@ -2270,7 +2204,6 @@ namespace unitycoder_MobilePaint
             DrawLine((int)start.x, (int)start.y, (int)end.x, (int)end.y);
         }
 
-
         void DrawLineWithBrush(Vector2 start, Vector2 end)
         {
             int x0 = (int)start.x;
@@ -2314,7 +2247,6 @@ namespace unitycoder_MobilePaint
                 }
             }
         }
-
 
         void DrawLineWithPattern(Vector2 start, Vector2 end)
         {
@@ -2451,7 +2383,6 @@ namespace unitycoder_MobilePaint
             }
         }
 
-
         /*
 		// Bresenham line with custom width, not used yet, still broken
 		// TODO: fix this.. http://members.chello.at/~easyfilter/bresenham.html
@@ -2495,7 +2426,6 @@ namespace unitycoder_MobilePaint
 			}
 		} // DrawLineWidth
 		*/
-
 
         // Basic undo function, copies original array (before drawing) into the image and applies it
         public void DoUndo()
@@ -2564,7 +2494,6 @@ namespace unitycoder_MobilePaint
             }
         } // clear image
 
-
         public void ClearImageWithImage()
         {
             // fill pixels array with clearpixels array
@@ -2575,7 +2504,6 @@ namespace unitycoder_MobilePaint
             drawingTexture.LoadRawTextureData(clearPixels);
             drawingTexture.Apply(false);
         } // clear image
-
 
         public void ReadMaskImage()
         {
@@ -2724,7 +2652,6 @@ namespace unitycoder_MobilePaint
             if (gameObject.GetComponent<MeshCollider>() == null) gameObject.AddComponent<MeshCollider>();
         }
 
-
         public void SetBrushSize(int newSize)
         {
             brushSize = (int)Mathf.Clamp(newSize, 1, 999);
@@ -2741,7 +2668,6 @@ namespace unitycoder_MobilePaint
         {
             drawMode = DrawMode.ShapeLines;
         }
-
 
         public void SetDrawModeBrush()
         {
@@ -2773,26 +2699,15 @@ namespace unitycoder_MobilePaint
         {
             var image = new Texture2D((int)(texWidth / resolutionScaler), (int)(texHeight / resolutionScaler), TextureFormat.RGBA32, false);
 
-            /*
-			Mesh go_Mesh = GetComponent<MeshFilter>().mesh;
-			var topLeft = cam.WorldToScreenPoint(go_Mesh.vertices[0]);
-			var topRight= cam.WorldToScreenPoint(go_Mesh.vertices[3]);
-			var bottomRight = cam.WorldToScreenPoint(go_Mesh.vertices[2]);
-			*/
-            //var image = new Texture2D((int)(bottomRight.x-topLeft.x),(int)(bottomRight.y-topRight.y), TextureFormat.ARGB32, false);
-
             // TODO: combine layers to single texture
             image.LoadRawTextureData(pixels);
             image.Apply(false);
             return image;
         }
 
-
         // returns screenshot as Texture2D
         public Texture2D GetScreenshot()
         {
-            HideUI();
-
             cam.Render();
             Mesh go_Mesh = GetComponent<MeshFilter>().mesh;
             var topLeft = cam.WorldToScreenPoint(go_Mesh.vertices[0]);
@@ -2802,7 +2717,6 @@ namespace unitycoder_MobilePaint
             image.ReadPixels(new Rect(topLeft.x, topLeft.y, bottomRight.x, bottomRight.y), 0, 0);
             image.Apply(false);
 
-            ShowUI();
             return image;
         }
 
@@ -2810,7 +2724,6 @@ namespace unitycoder_MobilePaint
         {
             return (int)(val - val % gridSize);
         }
-
 
         // converts pixel coordinate to world position
         public Vector3 PixelToWorld(int x, int y)
@@ -2885,10 +2798,6 @@ namespace unitycoder_MobilePaint
 
             }
             else { //material is ok
-
-                // NOTE: if new texture is different size, problems will occur when drawing (mask is not aligned)
-                //if (texWidth!=maskTex.width || texHeight != maskTex.height) Debug.LogWarning("SetMaskImage: New mask texture size is different from existing canvas texture, could cause problems. Current resolution:"+texWidth+"x"+texHeight+" | Mask resolution:"+maskTex.width+"x"+maskTex.height);
-
                 maskTex = newTexture;
                 texWidth = newTexture.width;
                 texHeight = newTexture.height;
@@ -2897,7 +2806,6 @@ namespace unitycoder_MobilePaint
                 textureNeedsUpdate = true;
             }
         } // SetMaskImage
-
 
         // assigns new canvas image
         public void SetCanvasImage(Texture2D newTexture)
@@ -2913,7 +2821,6 @@ namespace unitycoder_MobilePaint
             this.enabled = isZoomingOrPanning ? false : true; // Disable Update() loop from this script, if zooming or panning
         }
 
-
         // cleaning up buffers - https://github.com/unitycoder/UnityMobilePaint/issues/10
         void OnDestroy()
         {
@@ -2923,10 +2830,7 @@ namespace unitycoder_MobilePaint
             clearPixels = null;
             lockMaskPixels = null;
             if (undoEnabled) undoPixels.Clear();
-
-            // System.GC.Collect();
         }
-
 
     } // class
 } // namespace
